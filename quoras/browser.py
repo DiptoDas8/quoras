@@ -7,26 +7,12 @@ from selenium.webdriver.chrome.options import Options
 from selenium.webdriver.common.keys import Keys
 from urllib.parse import unquote
 
-from .config import BASE_URL, DOMAIN_URL, TITLE_PHRASE
-
 class Browser:
     """Browser class"""
 
-    def __init__(self, linux=False):
+    def __init__(self, language):
         # specifies the path to the chromedriver.exe
-        GOOGLE_CHROME_PATH = './chrome_path/chromedriver.exe'
-
-        if os.path.exists(GOOGLE_CHROME_PATH):
-            print('Gooogle Chrome Path found')
-        else:
-            try:
-                os.mkdir('./chrome_path')
-            except:
-                pass
-            print('Download chromedriver for your OS from: https://chromedriver.storage.googleapis.com/index.html?path=80.0.3987.106/\n'
-                  'Rename it to be chromedriver.exe\n'
-                  'Place it in \'./chrome_path/\' directory with your python script.')
-            exit(1)
+        GOOGLE_CHROME_PATH = './chrome_path' + '/chromedriver.exe'
 
         OPTION = Options()
         OPTION.add_argument("--disable-infobars")
@@ -40,10 +26,33 @@ class Browser:
             "prefs", {"profile.default_content_setting_values.notifications": 1}
         )
         self.driver = webdriver.Chrome(executable_path=GOOGLE_CHROME_PATH, chrome_options=OPTION)
+        # self.driver = webdriver.PhantomJS()
+
+        self.BASE_URL = 'https://www.quora.com'
+        DOMAIN_URLS = {
+            "en": 'https://quora.com',
+            "bn": 'https://bn.quora.com',
+            "hi": 'https://hi.quora.com',
+            "es": 'https://es.quora.com',
+            "fr": 'https://fr.quora.com',
+            "jp": 'https://jp.quora.com'
+        }
+        self.DOMAIN_URL = DOMAIN_URLS[language]
+
+        TITLE_PHRASES = {
+            "bn": 'অনুসন্ধান করুন',
+            "en": 'Search',
+            "hi": 'ढूँढें',
+            "es": 'Buscar',
+            "fr": 'Rechercher',
+            "jp": '検索',
+        }
+
+        self.TITLE_PHRASE = TITLE_PHRASES[language]
 
     def get_home(self):
         """Navigates to Nairaland mainpage"""
-        url = BASE_URL
+        url = self.BASE_URL
         self.driver.get(url)
         print("[Browser] Visiting Quora Homepage")
 
@@ -68,10 +77,10 @@ class Browser:
 
     def search_by(self, search_keyword, type, scroll_count):
         """Initiate the search with keyword"""
-        self.driver.get(DOMAIN_URL+'/search?q='+search_keyword+'&type='+type)
+        self.driver.get(self.DOMAIN_URL+'/search?q='+search_keyword+'&type='+type)
         self.infinite_scroll(scroll_count)
         # print(DOMAIN_URL+'/search?q='+search_keyword+'&type='+type)
-        if TITLE_PHRASE in self.driver.title:
+        if self.TITLE_PHRASE in self.driver.title:
             print("Search succeeded")
         else:
             print('Something bad has happened: ', self.driver.title)
@@ -123,50 +132,50 @@ class Browser:
         self.infinite_scroll(scroll_count)
         print ("[Browser] Visited to", url)
         if 'follow' in category:
-            return self.get_users(scroll_count)
+            return self.get_users()
         else:
-            return self.get_questions(scroll_count)
+            return self.get_questions()
 
-    def get_comments(self, limit=None):
-        all_comm = []
-
-        comments = self.driver.find_elements_by_class_name('pagedlist_item')
-
-        count = 0
-        for comment in comments:
-            if 'Sponsored' in comment.text:
-                continue
-            if limit and count >= limit:
-                break
-            count = count + 1
-            data = {}
-            data['user'] = {}
-            try:
-                div = comment.find_element_by_class_name('u-serif-font-main--large')
-                div.find_element_by_class_name('ui_qtext_more_link').click()
-            except:
-                pass
-
-            try:
-                div = comment.find_element_by_class_name('u-serif-font-main--large')
-                data['text'] = div.text
-            except:
-                continue
-
-            try:
-                user = comment.find_element_by_css_selector('a')
-
-                if user:
-                    data['user']['url'] = user.get_attribute('href')
-                    data['user']['name'] = user.text
-            except:
-                pass
-
-            try:
-                text = comment.find('a', class_="_1sA-1jNHouHDpgCp1fCQ_F").get_text()
-                data['user']['datetime'] = str(dateparser.parse(text))
-            except:
-                data['user']['datetime'] = str(datetime.datetime.now())
-            all_comm.append(data)
-
-        return all_comm
+    # def get_comments(self, limit=None):
+    #     all_comm = []
+    #
+    #     comments = self.driver.find_elements_by_class_name('pagedlist_item')
+    #
+    #     count = 0
+    #     for comment in comments:
+    #         if 'Sponsored' in comment.text:
+    #             continue
+    #         if limit and count >= limit:
+    #             break
+    #         count = count + 1
+    #         data = {}
+    #         data['user'] = {}
+    #         try:
+    #             div = comment.find_element_by_class_name('u-serif-font-main--large')
+    #             div.find_element_by_class_name('ui_qtext_more_link').click()
+    #         except:
+    #             pass
+    #
+    #         try:
+    #             div = comment.find_element_by_class_name('u-serif-font-main--large')
+    #             data['text'] = div.text
+    #         except:
+    #             continue
+    #
+    #         try:
+    #             user = comment.find_element_by_css_selector('a')
+    #
+    #             if user:
+    #                 data['user']['url'] = user.get_attribute('href')
+    #                 data['user']['name'] = user.text
+    #         except:
+    #             pass
+    #
+    #         try:
+    #             text = comment.find('a', class_="_1sA-1jNHouHDpgCp1fCQ_F").get_text()
+    #             data['user']['datetime'] = str(dateparser.parse(text))
+    #         except:
+    #             data['user']['datetime'] = str(datetime.datetime.now())
+    #         all_comm.append(data)
+    #
+    #     return all_comm

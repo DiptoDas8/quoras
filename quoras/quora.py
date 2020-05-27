@@ -1,30 +1,29 @@
 import os
-from .config import BASE_URL, DOMAIN_URL, QR_EMAIL, QR_PASSWORD
 from .scraper import Scraper
 from urllib.parse import unquote
+from .browser import Browser
 
 
 class Quora:
-    def __init__(self, browser):
-        self.BASE_URL = BASE_URL
-        self.DOMAIN_URL = DOMAIN_URL
-        self.browser = browser
+    def __init__(self, email, password, language='en'):
+        self.browser = Browser(language)
+        self.BASE_URL = self.browser.BASE_URL
+        self.DOMAIN_URL = self.browser.DOMAIN_URL
+        self.browser.get_home()
+        self.browser.login(email, password)
 
-    def search_url(self, url, scroll_count=1):
+    def search_url(self, url):
         url = unquote (url)
         # Browser Actions
         b = self.browser
-        b.get_home ()
-        b.login (QR_EMAIL, QR_PASSWORD)
         b.get_url (url)
-        b.infinite_scroll (scroll_count)
 
         u = Scraper (html=b.get_source ())
         datum = {}
         datum['url'] = url
         datum['question'] = str (u.get_title ()).split ('-')[0].strip ()
         datum['topics'] = u.get_topics ()
-        datum['related_questions'] = u.get_related_questions ()
+        datum['related_questions'] = u.get_related_questions (self.DOMAIN_URL)
         datum['answers'] = []
         if url[-1] == '/':
             url = url[:-1]
@@ -33,36 +32,34 @@ class Quora:
         answer_urls = u.get_answer_urls ()
         # print ('length: ', len (answer_urls))
         for x in answer_urls:
+            print(x)
             if org_q in x:
                 if 'quora.com' in x:
                     pass
                 else:
-                    x = DOMAIN_URL + x
+                    x = self.DOMAIN_URL + x
                 answer = {}
                 answer['url'] = x
                 answer['full_answer'] = u.get_full_answer (x)
-            datum['answers'].append (answer)
+                try:
+                    datum['answers'].append (answer)
+                except:
+                    pass
 
         return datum
 
     def search_posts(self, keyword, scroll_count):
         # Browser Actions
         b = self.browser
-        b.get_home ()
-        b.login (QR_EMAIL, QR_PASSWORD)
         b.search_by (keyword, 'question', scroll_count)
-        b.infinite_scroll (scroll_count)
         our_urls = [unquote (link) for link in b.get_questions (scroll_count)]
         return our_urls
 
     def search_users(self, keyword, scroll_count):
         # Browser Actions
         b = self.browser
-        b.get_home ()
-        b.login (QR_EMAIL, QR_PASSWORD)
-        b.search_by (keyword, 'user', scroll_count)
-        b.infinite_scroll (scroll_count)
-        user_urls = [unquote (link) for link in b.get_users (scroll_count)]
+        b.search_by (keyword, 'user')
+        user_urls = [unquote (link) for link in b.get_users ()]
         return user_urls[1:]
 
     def search(self, keyword, type='question', scroll_count=1):
@@ -77,8 +74,6 @@ class Quora:
         url = unquote(url)
         # Browser Actions
         b = self.browser
-        b.get_home ()
-        b.login (QR_EMAIL, QR_PASSWORD)
 
         b.get_url (url)
         u = Scraper (html=b.get_source ())
@@ -92,7 +87,7 @@ class Quora:
             user_details['number_of_following'] = u.get_user_stats()
         except:
             pass
-        b.infinite_scroll (scroll_count)
+
         user_details['answers'] = b.get_urls (url, 'answers', scroll_count)
         user_details['questions'] = b.get_urls(url, 'questions', scroll_count)
         user_details['shares'] = b.get_urls(url, 'shares', scroll_count)
