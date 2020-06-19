@@ -3,7 +3,7 @@
 A Python package to collect data from Quora.
 
 ## Installation
-The package is available on PyPi. Simply run the following command:
+The package is available on PyPI. Simply run the following command:
 
 ```
 pip install quoras
