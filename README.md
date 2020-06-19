@@ -37,6 +37,12 @@ users = quora.search_users('Dipto Das', scroll_count=1)
 If you already have an url, you can directly search details about that entry. If it is an url to a Q/A thread, then it will return the question, topics, answers, participating users, and Quora suggested related questions. If it is an url to a user profile, then it will return statistics about the user (e.g., number of public answers, number of questions, number of shares, number of posts, number of followings, and number of followers), and links to top (defined by Quora) posts from the user. To use this function, you have to call `search_url(url)` function.
 
 ```
-qathread_details = quora.search_url('https://bn.quora.com/দ্বিজাতি-তত্ত্ব-কী')
+qathread_details = quora.search_url('https://bn.quora.com/আসামকে-কেন-সবাই-অসম-বলছে')
 user_details = quora.search_url('https://www.quora.com/profile/Dipto-Das-1')
+```
+
+Importantly, quoras can can retrieve the full text in an answer given its url. For that, you need to call `get_full_answer(url)` function as following:
+
+```
+full_answer = quora.get_full_answer('https://bn.quora.com/বিজ্ঞানীদের-মধ্যেও-কি/answers/150612153')
 ```
