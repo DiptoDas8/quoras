@@ -26,6 +26,5 @@ setup(
     install_requires=["selenium", "bs4", "lxml"],
     entry_points={
         
-        ]
     },
 )
