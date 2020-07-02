@@ -7,6 +7,7 @@ from selenium.webdriver.chrome.options import Options
 from selenium.webdriver.common.keys import Keys
 from urllib.parse import unquote
 
+
 class Browser:
     """Browser class"""
 
@@ -69,11 +70,7 @@ class Browser:
         password.send_keys(user_pass)
         password.send_keys(Keys.RETURN)
         time.sleep(3)
-        if 'Home - Quora' in self.driver.title:
-            print('Quora Login successful')
-        else:
-            print('Quora Login failed: ', self.driver.title)
-            exit()
+
 
     def search_by(self, search_keyword, type, scroll_count):
         """Initiate the search with keyword"""
@@ -85,6 +82,17 @@ class Browser:
         else:
             print('Something bad has happened: ', self.driver.title)
             exit()
+
+    def search_rss(self, search_keyword, scroll_count):
+        """Initiate the search with keyword"""
+        self.driver.get (self.DOMAIN_URL + '/topic/' + search_keyword + '/all_questions/')
+        self.infinite_scroll (scroll_count)
+        if self.TITLE_PHRASE in self.driver.title:
+            print ("Search succeeded")
+        else:
+            pass
+            # print ('Something bad has happened: ', self.driver.title)
+            # exit ()
 
     def infinite_scroll(self, limit=False):
         count = 0
@@ -126,56 +134,20 @@ class Browser:
                 urls.append (unquote(elem))
         return urls
 
+    def get_topics(self, scroll_count):
+        urls = []
+        self.infinite_scroll (scroll_count)
+        elems = self.driver.find_elements_by_class_name ("topic_name")
+        for elem in elems:
+            urls.append (unquote (elem.get_attribute ("href")))
+        return urls
+
     def get_urls(self, url, category, scroll_count):
         url = unquote(url+'/'+category)
         self.driver.get (url)
         self.infinite_scroll(scroll_count)
         print ("[Browser] Visited to", url)
         if 'follow' in category:
-            return self.get_users()
+            return self.get_users(scroll_count)
         else:
-            return self.get_questions()
-
-    # def get_comments(self, limit=None):
-    #     all_comm = []
-    #
-    #     comments = self.driver.find_elements_by_class_name('pagedlist_item')
-    #
-    #     count = 0
-    #     for comment in comments:
-    #         if 'Sponsored' in comment.text:
-    #             continue
-    #         if limit and count >= limit:
-    #             break
-    #         count = count + 1
-    #         data = {}
-    #         data['user'] = {}
-    #         try:
-    #             div = comment.find_element_by_class_name('u-serif-font-main--large')
-    #             div.find_element_by_class_name('ui_qtext_more_link').click()
-    #         except:
-    #             pass
-    #
-    #         try:
-    #             div = comment.find_element_by_class_name('u-serif-font-main--large')
-    #             data['text'] = div.text
-    #         except:
-    #             continue
-    #
-    #         try:
-    #             user = comment.find_element_by_css_selector('a')
-    #
-    #             if user:
-    #                 data['user']['url'] = user.get_attribute('href')
-    #                 data['user']['name'] = user.text
-    #         except:
-    #             pass
-    #
-    #         try:
-    #             text = comment.find('a', class_="_1sA-1jNHouHDpgCp1fCQ_F").get_text()
-    #             data['user']['datetime'] = str(dateparser.parse(text))
-    #         except:
-    #             data['user']['datetime'] = str(datetime.datetime.now())
-    #         all_comm.append(data)
-    #
-    #     return all_comm
+            return self.get_questions(scroll_count)

@@ -3,6 +3,8 @@ import dateparser
 import datetime
 import requests
 import codecs
+from urllib.parse import unquote
+from langdetect import detect
 
 class Scraper:
     """Scraper class"""
@@ -14,68 +16,50 @@ class Scraper:
     def get_title(self):
         return self.soup.title.string
 
-    # def get_urls(self):
-    #     """Scrapes posts on a page"""
-    #     all_urls = []
-    #     # infinite scroll
-    #     urls = self.soup.find_all("a", class_="SQnoC3ObvgnGjWt90zD9Z _2INHSNB8V5eaWp4P0rY_mE")
-    #     for url in urls:
-    #         all_urls.append(url['href'])
-    #     return all_urls
-
-    # def get_details(self):
-    #     data = {}
-    #     thread = self.soup.find_all('div', 'pagedlist_item')
-    #     user_div = thread.pop()
-    #
-    #     a = user_div.find('a', class_="user")
-    #     data['text'] = self.soup.find('span', class_='rendered_qtext').get_text()
-    #     data['user'] = {}
-    #     try:
-    #         data['user']['url'] = DOMAIN_URL+a['href']
-    #         data['user']['name'] = a.get_text ()
-    #     except:
-    #         pass
-    #
-    #     try:
-    #         text = self.soup.find('p', class_="log_action_bar").get_text()
-    #         split = text.split(' · ')
-    #         date_time = split.pop().rstrip()
-    #         data['datetime'] = str(dateparser.parse(date_time))
-    #     except:
-    #         data['datetime'] = str(datetime.datetime.now())
-    #
-    #     return data
-
-    # def get_followers(self):
-    #     links = self.soup.find_all("span", class_='list_count')
-    #     try:
-    #         span = links.pop()
-    #         return span.text
-    #     except:
-    #         return []
+    def get_all_urls(self):
+        content = str (self.soup)
+        # print (content)
+        text_substr = r'href="'
+        text_substr_end = r'"'
+        text_starts = [i for i in range (len (content)) if content.startswith (text_substr, i)]
+        text_starts.append (len (content))
+        substrings = []
+        unicode_dirt = '\\'
+        for i in range (1, len (text_starts) - 1):
+            substring = content[text_starts[i] + len (text_substr):text_starts[i + 1]]
+            end_idx = substring.find (text_substr_end)
+            substring = substring[:end_idx].strip ().replace (unicode_dirt, '')
+            substrings.append (substring)
+        return substrings
 
     def get_topics(self):
-        topics_ = self.soup.find_all('a', class_="topic_name")
-        #TopicNameLink HoverMenu topic_name/HoverMenu TopicNameLink topic_name
         topics = []
-        for topic in topics_:
-            try:
-                topics.append(str(topic.find('span', class_="TopicNameSpan").get_text()))
-            except:
-                pass
-        return topics
+        urls = self.get_all_urls()
+        for url in urls:
+            if 'topic' in url:
+                pos = len('https://bn.quora.com/topic/')
+                topic = url[pos:]
+                topics.append(topic)
+        return list(set(topics))
+
+    def get_users(self):
+        users = []
+        urls = self.get_all_urls ()
+        for url in urls:
+            if 'profile' in url:
+                pos = len ('https://bn.quora.com/profile/')
+                profile = url[pos:]
+                if profile!='Dipto-Das-1':
+                    users.append (profile)
+        return list(set(users))
 
     def get_answer_urls(self):
-        all_answers_ = self.soup.find_all('a', class_='answer_permalink')
-        answer_urls = []
-        for ans in all_answers_:
-            print(ans)
-            try:
-                answer_urls.append(str(ans['href']))
-            except:
-                pass
-        return answer_urls
+        answers = []
+        urls = self.get_all_urls ()
+        for url in urls:
+            if 'answers' in url:
+                answers.append(url)
+        return answers
 
     def get_full_answer(self, url):
         # print('came here')
@@ -97,25 +81,29 @@ class Scraper:
                 pass
             substrings.append (substring)
         text = ' '.join (substrings).replace(unicode_dirt, '')
-        print(text)
         return text
 
-    def get_related_questions(self, domain_url):
-        list_of_ques = self.soup.find_all('a', class_='question_link')
-        related_questions = set()
-        for elem in list_of_ques:
-            try:
-                address = str(elem['href'])
-                if 'quora.com' not in address:
-                    address = domain_url+address
-                related_questions.add(address)
-            except:
-                pass
-        return list(related_questions)
+    def get_related_questions(self):
+        answers = []
+        urls = self.get_all_urls ()
+        for url in urls:
+            if 'https://bn.quora.com/' in url and \
+                    not('answers' in url or 'topic' in url or 'profile' in url):
+                answers.append (url)
+        return answers
 
     def get_user_stats(self):
-        counts_ = self.soup.find_all('span', class_='list_count')
-        counts = []
-        for count in counts_:
-            counts.append(count.get_text())
+        content = str (self.soup)
+        stats = [r'\"numPublicAnswers\":', r'\"numProfileQuestions\":', r'\"quoraSharesCount\":',
+                 r'\"numTribePosts\":', r'\"followingCount\":', r'\"followerCount\":']
+        counts = {}
+        # print (content)
+        for stat in stats:
+            text_substr = stat
+            text_substr_end = r','
+            text_start = content.find(text_substr)+len(stat)
+            text_end = content[text_start:].find(text_substr_end)
+            # print(text_start)
+            count = int(content[text_start:][:text_end])
+            counts[stat.replace('\\','').replace(':','').replace('\"', '')] = count
         return counts

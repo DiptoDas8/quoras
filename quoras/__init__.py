@@ -1,3 +1,3 @@
 from .scraper import Scraper
-from .quora import Quora
+from .quoras import Quoras
 from .browser import Browser

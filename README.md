@@ -20,10 +20,11 @@ quora = Quora ('email-address', 'password', 'language-code')
 ```
 
 ## Usage
-This package allows you to call several functions. Search with keywords for questions or users with function `search(keyword, type='question', scroll_count=1)`. Change `type` to `'user'` to search user profiles. You can pass a value for `scroll_count` to control how many scrolls the web browser will automatically do.
+This package allows you to call several functions. Search with keywords for questions, topics or users with function `search(keyword, type='post', scroll_count=1)`. Change `type` to `'topic'` or `'user'` to search topic RSS pages or user profiles respectively. You can pass a value for `scroll_count` to control how many scrolls the web browser will automatically do.
 
 ```
-questions = quora.search('ancient history', 'question', scroll_count=1)
+posts = quora.search('ancient history', 'post', scroll_count=1)
+topics = quora.search('finance', 'topic', scroll_count=1)
 users = quora.search('Dipto Das', 'user', scroll_count=1)
 ```
 
@@ -32,6 +33,11 @@ There are alternative ways to search posts or users. You can call `search_posts(
 ```
 questions = quora.search_posts('ancient history', scroll_count=1)
 users = quora.search_users('Dipto Das', scroll_count=1)
+```
+
+To search for Q/A threads with a specific user-assigned topic tag, you can simply call `search_topic(topic, scroll_count=1)` function as follows:
+```
+topic_questions = search_topic('politics', scroll_count=5)
 ```
 
 If you already have an url, you can directly search details about that entry. If it is an url to a Q/A thread, then it will return the question, topics, answers, participating users, and Quora suggested related questions. If it is an url to a user profile, then it will return statistics about the user (e.g., number of public answers, number of questions, number of shares, number of posts, number of followings, and number of followers), and links to top (defined by Quora) posts from the user. To use this function, you have to call `search_url(url)` function.
